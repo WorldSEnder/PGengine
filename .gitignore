@@ -1,0 +1,6 @@
+
+# Eclipse stuff
+.externalToolBuilders/
+.settings/
+.project
+.cproject
