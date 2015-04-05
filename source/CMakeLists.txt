@@ -1,6 +1,7 @@
 
-add_subdirectory(main)
+set(maintarget engine)
 
+add_subdirectory(main)
 if(OPTION_TESTS)
     add_subdirectory(test tests)
-endif()
+endif(OPTION_TESTS)

@@ -51,19 +51,23 @@ void Any::destruct_f(Ptr in)
 template<typename T>
 Any::Stored_t<T>& Any::get()
 {
-	auto ptr = dynamic_cast<Stored_t<T>*>(managed);
-	if(ptr == nullptr)
-		throw new ::std::bad_cast{};
-	return *ptr;
+    using T_ = Stored_t<T>;
+    if(empty())
+        throw new ::std::bad_cast{};
+    if(typeid(T) != *storage_id)
+        throw new ::std::bad_cast{};
+	return *reinterpret_cast<T_*>(managed);
 }
 
 template<typename T>
 const Any::Stored_t<T>& Any::get() const
 {
-	auto ptr = dynamic_cast<Stored_t<T>*>(managed);
-	if(ptr == nullptr)
-		throw new ::std::bad_cast{};
-	return *ptr;
+    using T_ = Stored_t<T>;
+    if(empty())
+        throw new ::std::bad_cast{};
+    if(typeid(T) != *storage_id)
+        throw new ::std::bad_cast{};
+    return *reinterpret_cast<T_*>(managed);
 }
 
 }

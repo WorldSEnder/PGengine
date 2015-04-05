@@ -86,6 +86,8 @@ public:
 	 * Retrieves a reference to the stored object. This operation is type-safe.
 	 * When the object stored is not of the requested type, a std::bad_cast is
 	 * thrown.
+	 *
+	 * Note: currently the object has to be retrieved
 	 */
 	template<typename T>
 	Stored_t<T>& get();
