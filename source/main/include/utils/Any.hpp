@@ -21,6 +21,7 @@ class Any {
 
 	typedef void* Ptr;
 	typedef Ptr (*clone_op)(Ptr object);
+    typedef void (*throw_op)(Ptr object);
 	typedef void (*destructor_op)(Ptr object);
 
 	/**
@@ -28,6 +29,11 @@ class Any {
 	 */
 	template<typename T>
 	static Ptr clone_f(Ptr object);
+	/**
+	 * Throws an exception of type T*
+	 */
+    template<typename T>
+    static void throw_f(Ptr object);
 	/**
 	 * Destructs the hold object.
 	 */
@@ -93,15 +99,21 @@ public:
 	Stored_t<T>& get();
 	template<typename T>
 	const Stored_t<T>& get() const;
+    template<typename T>
+    Stored_t<T>& poly_get();
+    template<typename T>
+    const Stored_t<T>& poly_get() const;
 private:
 	const ::std::type_info* storage_id;
 	clone_op cloner;
+	throw_op throwing;
 	destructor_op destructor;
 
 	Ptr managed;
 
 	Ptr clone() const;
 	void clear();
+	Ptr release();
 };
 
 }

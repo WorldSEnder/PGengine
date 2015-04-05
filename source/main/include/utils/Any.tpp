@@ -17,6 +17,7 @@ template<typename S>
 Any::Any(S&& object)
 	: storage_id(&typeid(object)),
 	  cloner(clone_f<Stored_t<S>>),
+      throwing(throw_f<Stored_t<S>>),
 	  destructor(destruct_f<Stored_t<S>>),
 	  managed(new Stored_t<S>{std::forward<S>(object)})
 {}
@@ -28,6 +29,7 @@ Any& Any::operator=(S&& object)
 	using _S = Stored_t<S>;
 	storage_id = &typeid(object);
 	cloner = clone_f<_S>;
+	throwing = throw_f<_S>;
 	destructor = destruct_f<_S>;
 	managed = new _S{std::forward<S>(object)};
 	return *this;
@@ -39,9 +41,13 @@ auto Any::clone_f(Ptr in)
 {
 	return new T{*static_cast<T*>(in)};
 }
-/**
- * Destructs the hold object.
- */
+
+template<typename T>
+void Any::throw_f(Ptr in)
+{
+    throw static_cast<T*>(in);
+}
+
 template<typename T>
 void Any::destruct_f(Ptr in)
 {
@@ -54,7 +60,7 @@ Any::Stored_t<T>& Any::get()
     using T_ = Stored_t<T>;
     if(empty())
         throw new ::std::bad_cast{};
-    if(typeid(T) != *storage_id)
+    if(typeid(T) != typeinfo())
         throw new ::std::bad_cast{};
 	return *reinterpret_cast<T_*>(managed);
 }
@@ -65,9 +71,39 @@ const Any::Stored_t<T>& Any::get() const
     using T_ = Stored_t<T>;
     if(empty())
         throw new ::std::bad_cast{};
-    if(typeid(T) != *storage_id)
+    if(typeid(T) != typeinfo())
         throw new ::std::bad_cast{};
     return *reinterpret_cast<T_*>(managed);
+}
+
+template<typename T>
+Any::Stored_t<T>& Any::poly_get()
+{
+    using T_ = Stored_t<T>;
+    if(empty())
+        throw new ::std::bad_cast{};
+    try {
+        throwing(managed);
+    } catch(T_* ptr) {
+        return *ptr;
+    } catch(...) {
+        throw new ::std::bad_cast{};
+    }
+}
+
+template<typename T>
+const Any::Stored_t<T>& Any::poly_get() const
+{
+    using T_ = Stored_t<T>;
+    if(empty())
+        throw new ::std::bad_cast{};
+    try {
+        throwing(managed);
+    } catch(T_* ptr) {
+        return *ptr;
+    } catch(...) {
+        throw new ::std::bad_cast{};
+    }
 }
 
 }

@@ -12,6 +12,7 @@ namespace util {
 Any::Any()
 	: storage_id(&typeid(void)),
 	  cloner(),
+	  throwing(),
 	  destructor(),
 	  managed(nullptr)
 {}
@@ -19,6 +20,7 @@ Any::Any()
 Any::Any(const Any& other)
 	: storage_id(other.storage_id),
 	  cloner(other.cloner),
+	  throwing(other.throwing),
 	  destructor(other.destructor),
 	  managed(other.clone())
 {}
@@ -26,10 +28,11 @@ Any::Any(const Any& other)
 Any::Any(Any&& other)
 	: storage_id(other.storage_id),
 	  cloner(other.cloner),
+	  throwing(other.throwing),
 	  destructor(other.destructor),
 	  managed(other.managed)
 {
-	other.managed = nullptr;
+    other.release();
 }
 
 Any::~Any()
@@ -42,10 +45,11 @@ Any& Any::operator=(const Any& other)
 	if(this == &other)
 		return *this;
 	clear();
-	this->managed = other.clone();
 	this->cloner = other.cloner;
+	this->throwing = other.throwing;
 	this->destructor = other.destructor;
 	this->storage_id = other.storage_id;
+    this->managed = other.clone();
 	return *this;
 }
 
@@ -54,19 +58,17 @@ Any& Any::operator=(Any&& other)
 	if(this == &other)
 		return *this;
 	clear();
-	this->managed = other.managed;
-	other.managed = nullptr;
 	this->cloner = other.cloner;
+	this->throwing = other.throwing;
 	this->destructor = other.destructor;
-	this->storage_id = other.storage_id;
+    this->storage_id = other.storage_id;
+    this->managed = other.release();
 	return *this;
 }
 
 const ::std::type_info&
 Any::typeinfo() const
 {
-	if(empty())
-		return typeid(void);
 	return *storage_id;
 }
 
@@ -83,11 +85,21 @@ auto Any::clone() const
 	return cloner(managed);
 }
 
-void Any::clear()
+inline void Any::clear()
 {
 	if(empty())
 		return;
 	destructor(managed);
+	release();
+}
+
+inline auto Any::release()
+-> Ptr
+{
+    Ptr tmp = managed;
+    managed = nullptr;
+    storage_id = &typeid(void);
+    return tmp;
 }
 
 }
